@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#111827" />
+    <title>Connect 4 Online</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section id="lobby" class="screen">
+        <header class="brand">
+          <div class="logo" aria-label="Connect 4">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div>
+            <p class="eyebrow">Two player game</p>
+            <h1>Connect 4 <em>Online</em></h1>
+          </div>
+        </header>
+
+        <div class="lobby-grid">
+          <div class="panel lobby-card">
+            <label for="player-name">Player name</label>
+            <input id="player-name" maxlength="20" placeholder="Enter your name" autocomplete="nickname" />
+
+            <button id="create-room" class="button primary" type="button">Create a game</button>
+
+            <div class="divider"><span>or join a room</span></div>
+
+            <label for="room-code">Room code</label>
+            <div class="join-row">
+              <input id="room-code" maxlength="6" placeholder="ABC123" autocomplete="off" />
+              <button id="join-room" class="button secondary" type="button">Join</button>
+            </div>
+          </div>
+
+          <aside class="panel leaderboard-card">
+            <div class="panel-heading">
+              <h2>Leaderboard</h2>
+              <span class="live-dot">Live</span>
+            </div>
+            <div id="leaderboard" class="leaderboard">
+              <p class="muted">No games played yet.</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="game" class="screen hidden">
+        <header class="game-header">
+          <button id="leave-game" class="icon-button" type="button" aria-label="Leave game">&larr;</button>
+          <div class="room-label">Room <strong id="room-code-display"></strong></div>
+          <button id="copy-code" class="copy-button" type="button">Copy code</button>
+        </header>
+
+        <div class="game-layout">
+          <aside class="player player-one" id="player-one">
+            <span class="token-preview red"></span>
+            <div><small>Player 1</small><strong id="player-one-name">Waiting...</strong></div>
+          </aside>
+
+          <div class="board-column">
+            <div id="turn-status" class="turn-status">Waiting for players...</div>
+            <div id="board" class="board" role="grid" aria-label="Connect 4 board"></div>
+          </div>
+
+          <aside class="player player-two" id="player-two">
+            <span class="token-preview yellow"></span>
+            <div><small>Player 2</small><strong id="player-two-name">Waiting...</strong></div>
+          </aside>
+        </div>
+      </section>
+
+      <div id="game-over" class="modal hidden" role="dialog" aria-modal="true">
+        <div class="modal-card">
+          <div id="result-token" class="result-token"></div>
+          <p class="eyebrow">Game complete</p>
+          <h2 id="result-title">Player wins!</h2>
+          <p id="result-subtitle"></p>
+          <button id="play-again" class="button primary" type="button">Play again</button>
+          <button id="show-leaderboard" class="button link-button" type="button">View leaderboard</button>
+          <button id="return-lobby" class="button link-button" type="button">Return to lobby</button>
+        </div>
+      </div>
+
+      <div id="toast" class="toast hidden"></div>
+    </main>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

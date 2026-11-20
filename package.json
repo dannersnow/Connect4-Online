@@ -1,0 +1,16 @@
+{
+  "name": "connect4-online",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Real-time two-player Connect 4 game",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node --watch server/server.js",
+    "test": "node --test tests/game-test.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1"
+  }
+}
