@@ -8,6 +8,30 @@ const boardElement = document.querySelector('#board');
 const nameInput = document.querySelector('#player-name');
 const codeInput = document.querySelector('#room-code');
 const toast = document.querySelector('#toast');
+const roomCodeDisplay = document.querySelector('#room-code-display');
+const playerOne = document.querySelector('#player-one');
+const playerTwo = document.querySelector('#player-two');
+const playerOneName = document.querySelector('#player-one-name');
+const playerTwoName = document.querySelector('#player-two-name');
+const turnStatus = document.querySelector('#turn-status');
+const moveCounter = document.querySelector('#move-counter');
+const leaderboard = document.querySelector('#leaderboard');
+const resultTitle = document.querySelector('#result-title');
+const resultSubtitle = document.querySelector('#result-subtitle');
+const resultToken = document.querySelector('#result-token');
+
+const boardCells = Array.from({ length: 42 }, (_, index) => {
+  const cell = document.createElement('button');
+  cell.type = 'button';
+  cell.className = 'cell';
+  cell.setAttribute('role', 'gridcell');
+  cell.dataset.column = String(index % 7);
+  cell.addEventListener('click', () =>
+    socket.emit('make-move', { column: Number(cell.dataset.column) })
+  );
+  boardElement.appendChild(cell);
+  return cell;
+});
 
 let playerName = '';
 let roomCode = '';
@@ -68,7 +92,7 @@ function enterGame() {
   lobby.classList.add('hidden');
   gameScreen.classList.remove('hidden');
   gameOver.classList.add('hidden');
-  document.querySelector('#room-code-display').textContent = roomCode;
+  roomCodeDisplay.textContent = roomCode;
 }
 
 function leaveGame() {
@@ -83,93 +107,71 @@ function leaveGame() {
 function renderRoom(room) {
   currentRoom = room;
   roomCode = room.code;
-  document.querySelector('#room-code-display').textContent = room.code;
+  roomCodeDisplay.textContent = room.code;
 
   const p1 = room.players.find((player) => player.playerNumber === 1);
   const p2 = room.players.find((player) => player.playerNumber === 2);
-  document.querySelector('#player-one-name').textContent = p1
-    ? p1.name
-    : 'Waiting...';
-  document.querySelector('#player-two-name').textContent = p2
-    ? p2.name
-    : 'Waiting...';
-  document
-    .querySelector('#player-one')
-    .classList.toggle(
-      'active',
-      room.game.currentPlayer === 1 && room.game.status === 'playing'
-    );
-  document
-    .querySelector('#player-two')
-    .classList.toggle(
-      'active',
-      room.game.currentPlayer === 2 && room.game.status === 'playing'
-    );
+  playerOneName.textContent = p1 ? p1.name : 'Waiting...';
+  playerTwoName.textContent = p2 ? p2.name : 'Waiting...';
+  playerOne.classList.toggle(
+    'active',
+    room.game.currentPlayer === 1 && room.game.status === 'playing'
+  );
+  playerTwo.classList.toggle(
+    'active',
+    room.game.currentPlayer === 2 && room.game.status === 'playing'
+  );
 
   renderBoard(room.game);
   updateTurnStatus(room);
-  document.querySelector(
-    '#move-counter'
-  ).textContent = `Moves: ${room.game.moveCount}`;
+  moveCounter.textContent = `Moves: ${room.game.moveCount}`;
   if (room.game.status !== 'playing') showGameOver(room);
   else gameOver.classList.add('hidden');
 }
 
 function renderBoard(game) {
-  boardElement.innerHTML = '';
+  const winningCells = new Set(
+    game.winningCells.map(([row, column]) => `${row}:${column}`)
+  );
+
   for (let row = 0; row < 6; row += 1) {
     for (let column = 0; column < 7; column += 1) {
-      const cell = document.createElement('button');
+      const cell = boardCells[row * 7 + column];
       const value = game.board[row][column];
-      cell.type = 'button';
       cell.className = 'cell';
-      cell.setAttribute('role', 'gridcell');
-      cell.dataset.column = column;
       if (value) {
         cell.classList.add(value === 1 ? 'red' : 'yellow');
       }
-      if (
-        game.winningCells.some(
-          ([winRow, winColumn]) => winRow === row && winColumn === column
-        )
-      ) {
+      if (winningCells.has(`${row}:${column}`)) {
         cell.classList.add('winning');
       }
-      cell.addEventListener('click', () =>
-        socket.emit('make-move', { column })
-      );
-      boardElement.appendChild(cell);
     }
   }
 }
 
 function updateTurnStatus(room) {
-  const status = document.querySelector('#turn-status');
   const p1 = room.players.find((player) => player.playerNumber === 1);
   const p2 = room.players.find((player) => player.playerNumber === 2);
   if (room.players.length < 2) {
-    status.textContent = 'Waiting for Player 2...';
+    turnStatus.textContent = 'Waiting for Player 2...';
   } else if (room.game.status === 'playing') {
     const active = room.game.currentPlayer === 1 ? p1 : p2;
-    status.textContent = active ? `${active.name}'s turn` : 'Your turn';
+    turnStatus.textContent = active ? `${active.name}'s turn` : 'Your turn';
   }
 }
 
 function showGameOver(room) {
-  const title = document.querySelector('#result-title');
-  const subtitle = document.querySelector('#result-subtitle');
-  const token = document.querySelector('#result-token');
   if (room.game.status === 'draw') {
-    title.textContent = "It's a draw!";
-    subtitle.textContent = 'That board was a perfect standoff.';
-    token.className = 'result-token draw';
+    resultTitle.textContent = "It's a draw!";
+    resultSubtitle.textContent = 'That board was a perfect standoff.';
+    resultToken.className = 'result-token draw';
   } else {
     const winner = room.players.find(
       (player) => player.playerNumber === room.game.winner
     );
-    title.textContent = `${winner ? winner.name : 'Player'} wins!`;
-    subtitle.textContent = 'Four in a row. Nice work.';
-    token.className = `result-token ${
+    resultTitle.textContent = `${winner ? winner.name : 'Player'} wins!`;
+    resultSubtitle.textContent = 'Four in a row. Nice work.';
+    resultToken.className = `result-token ${
       room.game.winner === 1 ? 'red' : 'yellow'
     }`;
   }
@@ -179,10 +181,9 @@ function showGameOver(room) {
 
 async function loadLeaderboard() {
   try {
-    const rows = await fetch('/api/leaderboard').then((response) =>
-      response.json()
-    );
-    const leaderboard = document.querySelector('#leaderboard');
+    const response = await fetch('/api/leaderboard');
+    if (!response.ok) throw new Error('Leaderboard unavailable.');
+    const rows = await response.json();
     if (!rows.length) {
       leaderboard.innerHTML = '<p class="muted">No games played yet.</p>';
       return;
@@ -199,8 +200,7 @@ async function loadLeaderboard() {
       )
       .join('');
   } catch (_error) {
-    document.querySelector('#leaderboard').innerHTML =
-      '<p class="muted">Leaderboard unavailable.</p>';
+    leaderboard.innerHTML = '<p class="muted">Leaderboard unavailable.</p>';
   }
 }
 
